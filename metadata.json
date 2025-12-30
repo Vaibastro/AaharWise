@@ -1,0 +1,7 @@
+{
+  "name": "AaharWise",
+  "description": "Smart nutrition and preventive health coach with AI-powered meal recognition and nutrient tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
