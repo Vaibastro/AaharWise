@@ -15,7 +15,9 @@ const Card: React.FC<{ children: React.ReactNode; className?: string; variant?: 
 
   return (
     <div className={`aahar-card ${variantClass} ${className}`}>
-      {children}
+      <div className="relative z-10 h-full">
+        {children}
+      </div>
     </div>
   );
 };
@@ -89,7 +91,7 @@ const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = 
           {parsedSections.map((section, idx) => {
             if (section.title.includes('VERDICT')) {
               return (
-                <div key={idx} className="bg-gradient-primary p-8 rounded-[32px] border border-white/10 relative overflow-hidden group shadow-2xl">
+                <div key={idx} className="bg-gradient-primary p-8 rounded-[20px] border border-white/10 relative overflow-hidden group shadow-2xl">
                   <h4 className="text-[10px] font-black text-sky-300 uppercase tracking-[0.3em] mb-2">Metabolic Status</h4>
                   <p className="text-3xl font-black leading-tight tracking-tighter text-white">{section.inlineData || 'CALCULATING...'}</p>
                   {section.content && <p className="text-slate-400 text-sm font-bold mt-4 leading-relaxed border-t border-white/5 pt-4 italic">{section.content}</p>}
@@ -103,7 +105,7 @@ const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = 
               const labelPart = parts[1] || "EVALUATING";
               return (
                 <div key={idx} className="flex items-center gap-8 py-4 px-2">
-                  <div className="h-24 w-24 flex-shrink-0 rounded-[36px] bg-gradient-sky border border-white/20 flex flex-col items-center justify-center shadow-xl rotate-3">
+                  <div className="h-24 w-24 flex-shrink-0 rounded-[20px] bg-gradient-sky border border-white/20 flex flex-col items-center justify-center shadow-xl rotate-3">
                     <span className="text-4xl font-black text-slate-900 leading-none">{scorePart.split('/')[0]}</span>
                     <span className="text-[11px] font-black text-slate-900/40 uppercase tracking-widest mt-1">/ 10</span>
                   </div>
@@ -116,7 +118,7 @@ const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = 
             }
             if (section.title.includes('FORECAST')) {
                return (
-                <div key={idx} className="bg-sky-500/5 p-8 rounded-[32px] border border-sky-500/10 relative overflow-hidden group">
+                <div key={idx} className="bg-sky-500/5 p-8 rounded-[20px] border border-sky-500/10 relative overflow-hidden group">
                   <h4 className="text-[10px] font-black text-sky-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span> Biological Trajectory
                   </h4>
@@ -137,7 +139,7 @@ const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = 
                 <div className="text-slate-300 text-sm md:text-base leading-relaxed font-medium pl-1">
                   {section.inlineData && !section.content.includes(section.inlineData) && <p className="mb-4 font-bold text-white text-xl">{section.inlineData}</p>}
                   {section.content.split('\n').map((line, lIdx) => (
-                    <div key={lIdx} className={line.startsWith('-') ? "flex gap-3 mb-3 bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors" : "mb-4"}>
+                    <div key={lIdx} className={line.startsWith('-') ? "flex gap-3 mb-3 bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors" : "mb-4"}>
                       {line.startsWith('-') ? (
                         <>
                           <span className="text-sky-400 font-black pt-0.5">→</span>
@@ -337,7 +339,7 @@ export default function App() {
   return (
     <div className="min-h-screen pb-32 md:pb-24 text-slate-700 dark:text-slate-300 transition-colors duration-300">
       <header className="sticky top-0 z-50 px-4 pt-6 pb-4 no-print">
-        <div className="max-w-5xl mx-auto flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 px-6 py-4 rounded-[24px] shadow-sm">
+        <div className="max-w-5xl mx-auto flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 px-6 py-4 rounded-[20px] shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700 p-1">
               <Icons.NeuralLogo />
@@ -362,7 +364,7 @@ export default function App() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
             <Card variant="light" className="w-full max-w-md shadow-2xl relative overflow-hidden border-none dark:bg-slate-900">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md flex-shrink-0">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-md flex-shrink-0">
                   <img src={pendingDrink.imageUrl} alt="Drink" className="w-full h-full object-cover" />
                 </div>
                 <div>
@@ -374,10 +376,10 @@ export default function App() {
                 Liquid nutrients vary wildly based on ingredients. Please list them exactly.
               </p>
               <form onSubmit={handleDrinkIngredientsSubmit} className="space-y-4">
-                <textarea autoFocus value={drinkIngredients} onChange={(e) => setDrinkIngredients(e.target.value)} placeholder="e.g. 2 Apples, 1 Carrot, Ginger, 1 tsp Honey" className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl h-28 focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-900 outline-none font-bold text-slate-700 dark:text-slate-200 resize-none placeholder:text-slate-300 dark:placeholder:text-slate-600" required />
+                <textarea autoFocus value={drinkIngredients} onChange={(e) => setDrinkIngredients(e.target.value)} placeholder="e.g. 2 Apples, 1 Carrot, Ginger, 1 tsp Honey" className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl h-28 focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-900 outline-none font-bold text-slate-700 dark:text-slate-200 resize-none placeholder:text-slate-300 dark:placeholder:text-slate-600" required />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => { setPendingDrink(null); setDrinkIngredients(""); }} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl font-black transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700">Cancel</button>
-                  <button type="submit" disabled={isSubmittingDrink || !drinkIngredients.trim()} className={`flex-[2] py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-black shadow-lg transition-all ${isSubmittingDrink ? 'opacity-50' : 'hover:scale-[1.01]'}`}>
+                  <button type="button" onClick={() => { setPendingDrink(null); setDrinkIngredients(""); }} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl font-black transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700">Cancel</button>
+                  <button type="submit" disabled={isSubmittingDrink || !drinkIngredients.trim()} className={`flex-[2] py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-black shadow-lg transition-all ${isSubmittingDrink ? 'opacity-50' : 'hover:scale-[1.01]'}`}>
                     {isSubmittingDrink ? 'Analyzing...' : 'Confirm'}
                   </button>
                 </div>
@@ -486,7 +488,7 @@ export default function App() {
               <Card variant="light" className="no-print bg-white/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800">
                 <SectionTitle title="Add Log" icon={<Icons.Plus />} color="text-slate-800 dark:text-slate-200" />
                 <div className="mb-8">
-                  <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingImage} className="w-full py-10 border border-slate-100 dark:border-slate-800 rounded-[20px] flex flex-col items-center justify-center gap-3 bg-slate-50/30 dark:bg-slate-800/20 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all group">
+                  <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingImage} className="w-full py-10 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center gap-3 bg-slate-50/30 dark:bg-slate-800/20 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all group">
                     {isProcessingImage ? <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div> : (
                       <><div className="bg-slate-800 dark:bg-slate-700 p-3 rounded-xl text-white shadow-md group-hover:scale-110 transition-transform"><Icons.Camera /></div><span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Plate Scan</span></>
                     )}
