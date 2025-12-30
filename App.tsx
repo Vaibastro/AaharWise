@@ -335,7 +335,7 @@ export default function App() {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   return (
-    <div className="min-h-screen pb-24 md:pb-12 text-slate-700 dark:text-slate-300 transition-colors duration-300">
+    <div className="min-h-screen pb-32 md:pb-24 text-slate-700 dark:text-slate-300 transition-colors duration-300">
       <header className="sticky top-0 z-50 px-4 pt-6 pb-4 no-print">
         <div className="max-w-5xl mx-auto flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 px-6 py-4 rounded-[24px] shadow-sm">
           <div className="flex items-center gap-4">
@@ -529,6 +529,12 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <footer className="max-w-5xl mx-auto px-4 py-12 text-center">
+        <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+          &copy; {new Date().getFullYear()} {APP_NAME} &ndash; Prototype by Vaibhavi Hiremath.
+        </p>
+      </footer>
     </div>
   );
 }
