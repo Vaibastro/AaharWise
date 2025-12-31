@@ -15,37 +15,41 @@ const Card: React.FC<{ children: React.ReactNode; className?: string; variant?: 
 
   return (
     <div className={`aahar-card ${variantClass} ${className}`}>
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full flex flex-col">
         {children}
       </div>
     </div>
   );
 };
 
-const SectionTitle: React.FC<{ title: string; icon?: React.ReactNode; color?: string }> = ({ title, icon, color = "text-slate-700 dark:text-slate-300" }) => (
-  <h2 className={`text-sm font-black uppercase tracking-widest ${color} mb-6 flex items-center gap-3`}>
-    {icon && <span className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">{icon}</span>}
+const SectionTitle: React.FC<{ title: string; icon?: React.ReactNode; color?: string; centered?: boolean }> = ({ title, icon, color = "text-slate-700 dark:text-slate-300", centered }) => (
+  <h2 className={`text-sm font-black uppercase tracking-widest ${color} mb-6 flex items-center gap-3 ${centered ? 'justify-center w-full' : ''}`}>
+    {icon && <span className="p-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-lg">{icon}</span>}
     {title}
   </h2>
 );
 
 const NutrientProgress: React.FC<{ label: string; value: number; target: number; color: string; unit: string; icon: string }> = ({ label, value, target, color, unit, icon }) => {
   const percentage = target > 0 ? Math.min((value / target) * 100, 100) : 0;
+  
+  // Dynamically determine the text color based on the bar color for dark mode visibility
+  const darkTextColor = color.replace('bg-', 'dark:text-');
+
   return (
     <div className="group space-y-2">
       <div className="flex justify-between items-end">
         <div className="flex items-center gap-2">
-          <span className="text-lg opacity-70">{icon}</span>
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
+          <span className="text-lg opacity-80">{icon}</span>
+          <span className={`text-[11px] font-black uppercase tracking-wider text-slate-500 ${darkTextColor}`}>{label}</span>
         </div>
         <div className="text-right">
           <span className="text-sm font-black text-slate-800 dark:text-slate-100">{Math.round(value)}{unit}</span>
           <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-tighter">/ {target}{unit}</span>
         </div>
       </div>
-      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-50 dark:border-slate-700">
+      <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner">
         <div 
-          className={`h-full ${color} transition-all duration-1000 ease-out rounded-full shadow-sm`} 
+          className={`h-full ${color} transition-all duration-1000 ease-out rounded-full shadow-[0_0_10px_rgba(0,0,0,0.1)]`} 
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -72,7 +76,7 @@ const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = 
   }, [analysis]);
 
   return (
-    <div className="animate-in fade-in zoom-in-95 duration-500">
+    <div className="animate-in fade-in zoom-in-95 duration-500 my-8">
       <Card variant="dark" className="border-none ring-1 ring-slate-800 dark:ring-slate-700">
         <div className="flex justify-between items-start mb-8 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3">
@@ -208,6 +212,9 @@ export default function App() {
     }, { calories: 0, carbs: 0, protein: 0, fiber: 0, fats: 0 });
   }, [meals]);
 
+  const waterGoal = 2500;
+  const waterPercentage = Math.min((waterMl / waterGoal) * 100, 100);
+
   const weeklyAverages = useMemo(() => {
     if (pastLogs.length === 0) return null;
     const count = pastLogs.length;
@@ -337,7 +344,7 @@ export default function App() {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   return (
-    <div className="min-h-screen pb-32 md:pb-24 text-slate-700 dark:text-slate-300 transition-colors duration-300">
+    <div className="min-h-screen pb-40 md:pb-32 text-slate-700 dark:text-slate-300 transition-colors duration-300">
       <header className="sticky top-0 z-50 px-4 pt-6 pb-4 no-print">
         <div className="max-w-5xl mx-auto flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 px-6 py-4 rounded-[20px] shadow-sm">
           <div className="flex items-center gap-4">
@@ -427,15 +434,15 @@ export default function App() {
         )}
 
         {view === 'daily' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-            <div className="flex justify-between items-center px-2 no-print">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 pb-10">
+            <div className="flex justify-between items-center px-4 no-print">
               <h2 className="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight uppercase tracking-widest opacity-80">Daily Journal</h2>
-              <button onClick={exportDailyCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all uppercase tracking-widest">Export CSV</button>
+              <button onClick={exportDailyCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all uppercase tracking-widest">Export CSV</button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
               <Card className="lg:col-span-4 flex flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900/40" variant="light">
-                <SectionTitle title="Energy Scale" />
+                <SectionTitle title="Energy Scale" centered />
                 <div className="relative w-40 h-40 flex items-center justify-center mb-6">
                   <svg viewBox="0 0 192 192" className="w-full h-full -rotate-90 block">
                     <defs>
@@ -457,24 +464,32 @@ export default function App() {
                       className="transition-all duration-1000 ease-in-out drop-shadow-xl" 
                     />
                   </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center"><span className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{Math.round(totalNutrients.calories)}</span><span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">kcal</span></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{Math.round(totalNutrients.calories)}</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">kcal</span>
+                  </div>
                 </div>
-                <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest border border-slate-200/50 dark:border-slate-700/50">Target: {calorieTarget}</div>
+                <div className="px-4 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-full text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest border border-slate-200/50 dark:border-slate-700/50">Target: {calorieTarget}</div>
               </Card>
 
               <Card className="lg:col-span-8" variant="sky">
-                <div className="flex justify-between items-start mb-6"><SectionTitle title="Macro Distribution" icon={<Icons.Plus />} color="text-slate-800 dark:text-slate-900" /><div className="text-right"><p className="text-[10px] font-black text-slate-700 uppercase tracking-widest opacity-60">{todayStr}</p></div></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                  <NutrientProgress label="Protein" icon="🥩" value={totalNutrients.protein} target={120} color="bg-slate-700" unit="g" />
-                  <NutrientProgress label="Fiber" icon="🥗" value={totalNutrients.fiber} target={30} color="bg-slate-500" unit="g" />
-                  <NutrientProgress label="Carbs" icon="🍞" value={totalNutrients.carbs} target={250} color="bg-slate-400" unit="g" />
-                  <NutrientProgress label="Fats" icon="🥑" value={totalNutrients.fats} target={70} color="bg-slate-300" unit="g" />
+                <div className="flex justify-between items-start mb-6">
+                  <SectionTitle title="Macro Distribution" icon={<Icons.Plus />} color="text-slate-800 dark:text-slate-900" />
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest opacity-60 italic">{todayStr}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 flex-grow">
+                  <NutrientProgress label="Protein" icon="🥩" value={totalNutrients.protein} target={120} color="bg-rose-400" unit="g" />
+                  <NutrientProgress label="Fiber" icon="🥗" value={totalNutrients.fiber} target={30} color="bg-emerald-400" unit="g" />
+                  <NutrientProgress label="Carbs" icon="🍞" value={totalNutrients.carbs} target={250} color="bg-sky-400" unit="g" />
+                  <NutrientProgress label="Fats" icon="🥑" value={totalNutrients.fats} target={70} color="bg-amber-400" unit="g" />
                 </div>
               </Card>
             </div>
 
             {isAnalyzing && (
-              <div className="animate-float no-print">
+              <div className="animate-float no-print my-6">
                 <Card className="bg-slate-800 dark:bg-slate-900 border-none flex items-center gap-6 py-6" variant="dark">
                   <div className="bg-slate-700 dark:bg-slate-800 p-3 rounded-xl animate-pulse text-sky-300"><Icons.Sparkles /></div>
                   <div><h3 className="text-base font-black tracking-tight text-white">Synthesizing Habits...</h3><p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">Modeling metabolic trajectory</p></div>
@@ -484,58 +499,139 @@ export default function App() {
 
             {analysis && <CoachFeedbackPanel analysis={analysis} onClose={() => setAnalysis(null)} />}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <Card variant="light" className="no-print bg-white/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800">
                 <SectionTitle title="Add Log" icon={<Icons.Plus />} color="text-slate-800 dark:text-slate-200" />
                 <div className="mb-8">
-                  <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingImage} className="w-full py-10 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col items-center justify-center gap-3 bg-slate-50/30 dark:bg-slate-800/20 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all group">
+                  <button onClick={() => fileInputRef.current?.click()} disabled={isProcessingImage} className="w-full py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center gap-4 bg-slate-50/30 dark:bg-slate-800/10 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all group">
                     {isProcessingImage ? <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div> : (
-                      <><div className="bg-slate-800 dark:bg-slate-700 p-3 rounded-xl text-white shadow-md group-hover:scale-110 transition-transform"><Icons.Camera /></div><span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Plate Scan</span></>
+                      <><div className="bg-slate-800 dark:bg-slate-700 p-4 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform"><Icons.Camera /></div><span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Plate Recognition</span></>
                     )}
                   </button>
                   <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
                 </div>
-                <form onSubmit={handleAddMeal} className="space-y-3">
-                  <input name="food" placeholder="Meal name..." className="w-full p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl outline-none focus:ring-1 focus:ring-slate-200 dark:focus:ring-slate-700 font-bold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600" required />
-                  <div className="grid grid-cols-2 gap-3"><input name="time" type="time" className="p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-200" /><input name="portion" placeholder="Portion" className="p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600" /></div>
-                  <div className="flex gap-4 justify-center py-2"><label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><input name="isHomeCooked" type="checkbox" className="w-4 h-4 rounded border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800" /> Homemade</label><label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><input name="isJunk" type="checkbox" className="w-4 h-4 rounded border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800" /> Cheat</label></div>
-                  <button type="submit" className="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-black text-sm shadow-md mt-2 hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors">Log Meal</button>
+                <form onSubmit={handleAddMeal} className="space-y-4">
+                  <input name="food" placeholder="What are you eating?" className="w-full p-4 bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-xl outline-none focus:ring-1 focus:ring-slate-200 dark:focus:ring-slate-700 font-bold text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600" required />
+                  <div className="grid grid-cols-2 gap-4">
+                    <input name="time" type="time" className="p-4 bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-200" />
+                    <input name="portion" placeholder="Portion (e.g. 1 bowl)" className="p-4 bg-white/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600" />
+                  </div>
+                  <div className="flex gap-6 justify-center py-4">
+                    <label className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                      <input name="isHomeCooked" type="checkbox" className="w-5 h-5 rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800" /> Homemade
+                    </label>
+                    <label className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                      <input name="isJunk" type="checkbox" className="w-5 h-5 rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800" /> Cheat
+                    </label>
+                  </div>
+                  <button type="submit" className="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-black text-sm shadow-xl mt-2 hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors">Record Entry</button>
                 </form>
               </Card>
 
               <div className="space-y-8">
-                <Card variant="sage" className="dark:bg-slate-800/60">
-                  <div className="flex justify-between items-center mb-6"><h2 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-3"><Icons.Droplet /> Hydration</h2><span className="text-[9px] font-black uppercase opacity-60 dark:text-slate-400">Goal: 2.5L</span></div>
-                  <div className="flex items-baseline gap-1 mb-6"><span className="text-4xl font-black text-slate-900 dark:text-slate-100">{waterMl}</span><span className="text-sm font-bold opacity-40 dark:text-slate-400">ml</span></div>
-                  <div className="grid grid-cols-3 gap-2 no-print">{[250, 500, 1000].map(amt => (<button key={amt} onClick={() => setWaterMl(prev => prev + amt)} className="py-2.5 bg-white/30 dark:bg-slate-700/30 border border-white/40 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all">+{amt}ml</button>))}</div>
-                </Card>
-                <Card variant="light" className="flex flex-col max-h-[360px] bg-slate-50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 shadow-none">
-                  <SectionTitle title="Timeline" icon={<Icons.History />} color="text-slate-800 dark:text-slate-200" />
-                  <div className="overflow-y-auto space-y-2 scrollbar-hide flex-grow pr-1">
-                    {meals.length === 0 ? <div className="py-12 text-center text-slate-300 dark:text-slate-600 font-bold italic text-xs">No entries for today.</div> : meals.map(meal => (
-                      <div key={meal.id} className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 group transition-all">
-                        <div className="flex gap-4 items-center"><div className="w-8 h-8 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center justify-center text-sm">{meal.isJunk ? '🍔' : '🥗'}</div><div><p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">{meal.food}</p><p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mt-1">{meal.time} • {Math.round(meal.nutrients?.calories || 0)} kcal</p></div></div>
-                        <button onClick={() => removeMeal(meal.id)} className="text-slate-200 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-400 p-2 opacity-0 group-hover:opacity-100 transition-all no-print"><Icons.Trash /></button>
-                      </div>
+                <Card variant="sage" className="dark:bg-slate-800/60 flex flex-col gap-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-3"><Icons.Droplet /> Hydration</h2>
+                    <span className="text-[9px] font-black uppercase opacity-60 dark:text-slate-400">Goal: 2.5L</span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <span className="text-4xl font-black text-slate-900 dark:text-slate-100">{waterMl}<span className="text-sm font-bold opacity-40 ml-1">ml</span></span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{Math.round(waterPercentage)}% OF TARGET</span>
+                    </div>
+                    <div className="h-4 bg-white/20 dark:bg-slate-900/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
+                      <div 
+                        className="h-full bg-slate-800 dark:bg-slate-200 transition-all duration-700 ease-out rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                        style={{ width: `${waterPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 no-print">
+                    {[250, 500, 1000].map(amt => (
+                      <button 
+                        key={amt} 
+                        onClick={() => setWaterMl(prev => prev + amt)} 
+                        className="py-3 bg-white/30 dark:bg-slate-700/30 border border-white/40 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all active:scale-95 shadow-sm"
+                      >
+                        +{amt}ml
+                      </button>
                     ))}
+                  </div>
+                  <button onClick={() => setWaterMl(0)} className="text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-right no-print self-end">Reset Daily Counter</button>
+                </Card>
+
+                <Card variant="light" className="flex flex-col min-h-[440px] bg-slate-50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 shadow-none">
+                  <SectionTitle title="Biological Timeline" icon={<Icons.History />} color="text-slate-800 dark:text-slate-200" />
+                  <div className="overflow-y-auto relative flex-grow pr-2 scrollbar-hide">
+                    {meals.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-12">
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center opacity-30 text-2xl">⚡</div>
+                        <div className="text-slate-300 dark:text-slate-600 font-bold italic text-xs px-8">Your biological timeline is empty. Record your first meal to start tracking metabolic impact.</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-8 relative ml-4 border-l-2 border-slate-100 dark:border-slate-800 pl-8 pb-8 pt-2">
+                        {meals.map((meal, idx) => (
+                          <div key={meal.id} className="relative group animate-in fade-in slide-in-from-left-4 duration-300">
+                            {/* Dot indicator aligned with vertical line */}
+                            <div className="absolute -left-[41px] top-2 w-4 h-4 rounded-full border-4 border-slate-50 dark:border-slate-900 bg-slate-800 dark:bg-slate-200 z-10 shadow-sm" />
+                            
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group-hover:translate-x-1">
+                              <div className="flex gap-4 items-center">
+                                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center text-xl shadow-inner border border-slate-100 dark:border-slate-700">
+                                  {meal.isJunk ? '🍔' : '🥗'}
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">{meal.food}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase">{meal.time}</span>
+                                    <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                    <span className="text-[10px] font-black text-sky-500 uppercase tracking-tighter">{Math.round(meal.nutrients?.calories || 0)} kcal</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    {meal.isHomeCooked && <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase tracking-widest text-slate-500 dark:text-slate-400">Home</span>}
+                                    {meal.isJunk && <span className="text-[8px] font-black bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded uppercase tracking-widest text-red-500 dark:text-red-400">Cheat</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <button onClick={() => removeMeal(meal.id)} className="text-slate-200 dark:text-slate-600 hover:text-red-400 dark:hover:text-red-400 p-2 opacity-0 group-hover:opacity-100 transition-all no-print transform hover:scale-110">
+                                <Icons.Trash />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {/* Final Dot Indicator */}
+                        <div className="absolute -left-[37px] bottom-0 w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                      </div>
+                    )}
                   </div>
                 </Card>
               </div>
             </div>
 
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-lg px-6 z-50 no-print">
-              <button disabled={meals.length === 0 || isAnalyzing} onClick={handleAnalysis} className={`w-full py-5 rounded-xl font-black text-base shadow-2xl flex items-center justify-center gap-3 transition-all transform active:scale-95 group ${meals.length === 0 || isAnalyzing ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed shadow-none' : 'bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 dark:hover:bg-slate-600 shadow-slate-200/50 dark:shadow-slate-900/50'}`}>
-                {isAnalyzing ? 'Synthesizing...' : 'Unlocking Potential'}
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 no-print flex justify-center">
+              <button 
+                disabled={meals.length === 0 || isAnalyzing} 
+                onClick={handleAnalysis} 
+                className={`px-8 py-3.5 rounded-full font-black text-[10px] shadow-2xl flex items-center justify-center gap-2.5 transition-all transform active:scale-95 group uppercase tracking-[0.2em] ${meals.length === 0 || isAnalyzing ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 dark:hover:bg-slate-600 shadow-slate-200/50 dark:shadow-slate-900/50'}`}
+              >
+                {isAnalyzing ? (
+                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> Synthesizing Profile</>
+                ) : (
+                  <><div className="w-4 h-4"><Icons.NeuralLogo /></div><span>Unlocking Potential</span></>
+                )}
               </button>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="max-w-5xl mx-auto px-4 py-12 text-center">
+      <footer className="max-w-5xl mx-auto px-4 py-16 text-center opacity-80">
         <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
           &copy; {new Date().getFullYear()} {APP_NAME} &ndash; Prototype by Vaibhavi Hiremath.
         </p>
+        <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-2">Personal Wellness Explorer &bull; v1.0</p>
       </footer>
     </div>
   );
