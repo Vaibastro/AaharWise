@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { DailyLog, UserProfile, HistorySummary, Nutrients } from "../types";
+import { DailyLog, UserProfile, Nutrients } from "../types";
 
 export interface MealAnalysisResult {
   foodName: string;
@@ -103,51 +103,45 @@ export const generateHealthAnalysis = async (
   }, { calories: 0, carbs: 0, protein: 0, fats: 0, fiber: 0 });
 
   const systemInstruction = `
-    You are AaharWise - an elite preventive health strategist. 
-    Your goal is to show the user the "Biological Destination" of their current lifestyle.
+    You are AaharWise - a metabolic strategist. Analyze logs into biological fates based on age (${todayLog.profileSnapshot.age}).
+    Analyze TODAY's intake combined with their HISTORY. Focus on future health consequences of repeating today's pattern.
+    
+    Structure your response EXACTLY like this:
+    ### THE VERDICT: [2-word blunt biological status]
+    [One sharp sentence describing the overall health condition for their age based on today and history.]
 
-    Structure your response EXACTLY as follows:
-    ### VERDICT: [HIGH-IMPACT STATUS e.g., ACCELERATED AGING, PEAK VITALITY, METABOLIC DECAY]
-    [One sharp sentence on the current state.]
+    ### THE TOLL: [Impact of TODAY's specific intake on their organs/metabolism right now.]
 
-    ### THE LONG-TERM FORECAST (5-10 YEARS)
-    [Based on the user's age (${todayLog.profileSnapshot.age}), gender, and habits, describe exactly what will happen to their body if this intake pattern continues. Mention specific risks like insulin resistance, visceral fat, muscle loss, or skin health.]
+    ### THE FORECAST: [A creative, high-stakes prediction of their body state in 10 years if TODAY'S intake remains their permanent standard.]
 
-    ### VITAL SCORE: [X]/10 - [CREATIVE LABEL]
-
-    ### THE BIOLOGICAL FIX
-    - [Immediate change to stop the damage]
-    - [Long-term habit to build resilience]
-
-    ### HISTORICAL PATTERN
-    [Synthesize today's data with their history. Are they improving or sliding? Mention if they are consistently hitting or missing protein/fiber/water goals.]
+    ### THE FIX: [One vital metabolic correction.]
+    
+    Constraint: Under 70 words total. Brutally honest, creative, and urgent.
   `;
 
   const profile = todayLog.profileSnapshot;
-  const historyStr = historyLogs.length > 0 
-    ? historyLogs.slice(0, 5).map(log => `- ${log.date}: ${log.totalNutrients?.calories} cal, ${log.meals.filter(m => m.isJunk).length} cheat meals`).join('\n')
-    : "No previous history available.";
+  const historyData = historyLogs.length > 0 
+    ? `Historical Intake: ${historyLogs.slice(0, 5).map(l => `${l.totalNutrients?.calories}kcal`).join(' -> ')}.` 
+    : "No history (Baseline).";
 
   const userPrompt = `
-    User: ${profile.age}yo ${profile.gender}, Goal: ${profile.conditions}
-    Today's Intake: ${totalNutrients.calories} cal, ${totalNutrients.protein}g Protein, ${totalNutrients.fiber}g Fiber, ${todayLog.waterMl}ml Water.
-    Cheat Meals Today: ${todayLog.meals.filter(m => m.isJunk).length}
+    Subject: ${profile.age}yo ${profile.gender}. 
+    Today: ${totalNutrients.calories}kcal, ${totalNutrients.protein}g Protein, ${totalNutrients.fiber}g Fiber, ${todayLog.waterMl}ml Water.
+    Junk Count Today: ${todayLog.meals.filter(m => m.isJunk).length}.
+    ${historyData}
     
-    Recent History Trend:
-    ${historyStr}
-    
-    Predict the future health of this person if this intake becomes their standard lifestyle.
+    What is the biological price and long-term trajectory of this pattern?
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: userPrompt,
-      config: { systemInstruction, temperature: 0.7 }
+      config: { systemInstruction, temperature: 1.0 }
     });
-    return response.text || "Coach is offline.";
+    return response.text || "Feedback engine error.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "Analysis hit a wall. Try again.";
+    return "Forecasting interrupted.";
   }
 };

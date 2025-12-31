@@ -15,7 +15,8 @@ const Card: React.FC<{ children: React.ReactNode; className?: string; variant?: 
 
   return (
     <div className={`aahar-card ${variantClass} ${className}`}>
-      <div className="relative z-10 h-full flex flex-col">
+      {/* Removed h-full from the inner div to prevent clipping/overflow issues in flex containers */}
+      <div className="relative z-10 flex flex-col h-auto">
         {children}
       </div>
     </div>
@@ -31,8 +32,6 @@ const SectionTitle: React.FC<{ title: string; icon?: React.ReactNode; color?: st
 
 const NutrientProgress: React.FC<{ label: string; value: number; target: number; color: string; unit: string; icon: string }> = ({ label, value, target, color, unit, icon }) => {
   const percentage = target > 0 ? Math.min((value / target) * 100, 100) : 0;
-  
-  // Dynamically determine the text color based on the bar color for dark mode visibility
   const darkTextColor = color.replace('bg-', 'dark:text-');
 
   return (
@@ -57,110 +56,238 @@ const NutrientProgress: React.FC<{ label: string; value: number; target: number;
   );
 };
 
+// --- CHARTING COMPONENTS ---
+
+const HistoricalTrendChart: React.FC<{ data: DailyLog[] }> = ({ data }) => {
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-7);
+  }, [data]);
+
+  if (sortedData.length < 2) return null;
+
+  const maxCal = Math.max(...sortedData.map(d => d.totalNutrients?.calories || 0), 2500);
+  const chartHeight = 120;
+  const chartWidth = 400;
+  const padding = 20;
+
+  const getPoints = (getValue: (d: DailyLog) => number) => {
+    return sortedData.map((d, i) => ({
+      x: padding + (i * (chartWidth - 2 * padding)) / (sortedData.length - 1),
+      y: chartHeight - padding - (getValue(d) / maxCal) * (chartHeight - 2 * padding)
+    }));
+  };
+
+  const calPoints = getPoints(d => d.totalNutrients?.calories || 0);
+  const pathD = `M ${calPoints.map(p => `${p.x},${p.y}`).join(' L ')}`;
+
+  return (
+    <div className="w-full mt-6 space-y-4">
+      <div className="flex justify-between items-center px-1">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Energy Trajectory (last 7 logs)</h4>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-800 dark:bg-slate-200"></span><span className="text-[9px] font-black uppercase text-slate-400">Calories</span></div>
+        </div>
+      </div>
+      <div className="relative bg-white/40 dark:bg-slate-900/40 rounded-2xl p-4 border border-white/20 dark:border-slate-800 shadow-inner overflow-hidden">
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto drop-shadow-sm overflow-visible">
+          {[0, 0.5, 1].map(v => (
+            <line 
+              key={v} 
+              x1={padding} y1={chartHeight - padding - v * (chartHeight - 2 * padding)} 
+              x2={chartWidth - padding} y2={chartHeight - padding - v * (chartHeight - 2 * padding)} 
+              stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeWidth="1" strokeDasharray="4 4" 
+            />
+          ))}
+          <path d={pathD} fill="none" className="stroke-slate-800 dark:stroke-slate-200" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          {calPoints.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="4" className="fill-white dark:fill-slate-900 stroke-slate-800 dark:stroke-slate-200" strokeWidth="2" />
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+const WaterHistoricalChart: React.FC<{ data: DailyLog[] }> = ({ data }) => {
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-7);
+  }, [data]);
+
+  if (sortedData.length < 1) return null;
+
+  const maxWater = Math.max(...sortedData.map(d => d.waterMl), 3000);
+  const chartHeight = 80;
+  const chartWidth = 400;
+  const padding = 10;
+  const barWidth = 20;
+
+  return (
+    <div className="w-full mt-8 space-y-4">
+      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 px-1">Hydration Consistency</h4>
+      <div className="bg-white/40 dark:bg-slate-900/40 rounded-2xl p-4 border border-white/20 dark:border-slate-800 shadow-inner overflow-hidden">
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
+          {sortedData.map((d, i) => {
+            const x = padding + (i * (chartWidth - 2 * padding)) / (sortedData.length - 1);
+            const h = (d.waterMl / maxWater) * (chartHeight - 2 * padding);
+            return (
+              <g key={i}>
+                <rect 
+                  x={x - barWidth/2} y={chartHeight - padding - h} 
+                  width={barWidth} height={h} 
+                  rx="4"
+                  className="fill-sky-400 dark:fill-sky-500 opacity-80"
+                />
+                <text 
+                  x={x} y={chartHeight - 2} 
+                  fontSize="6" fontWeight="900" 
+                  textAnchor="middle" 
+                  className="fill-slate-400 uppercase font-sans"
+                >
+                  {new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </text>
+              </g>
+            );
+          })}
+          <line 
+            x1={0} y1={chartHeight - padding - (2500 / maxWater) * (chartHeight - 2 * padding)} 
+            x2={chartWidth} y2={chartHeight - padding - (2500 / maxWater) * (chartHeight - 2 * padding)} 
+            stroke="#fbbf24" strokeWidth="1" strokeDasharray="2 2"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+};
+
 const CoachFeedbackPanel: React.FC<{ analysis: string; onClose: () => void }> = ({ analysis, onClose }) => {
   const parsedSections = useMemo(() => {
-    const rawSections = analysis.split(/###\s+/).filter(s => s.trim() !== '');
-    return rawSections.map(s => {
-      const lines = s.trim().split('\n');
-      const headerLine = lines[0].trim();
-      const separatorIndex = headerLine.indexOf(':');
-      let title = headerLine;
-      let inlineData = "";
-      if (separatorIndex !== -1) {
-        title = headerLine.substring(0, separatorIndex).trim();
-        inlineData = headerLine.substring(separatorIndex + 1).trim();
+    // Robust parsing: split by header pattern and capture titles and bodies
+    const sections: { title: string; content: string }[] = [];
+    const headerRegex = /###\s+([A-Z\s]+):?/gi;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = headerRegex.exec(analysis)) !== null) {
+      if (sections.length > 0) {
+        sections[sections.length - 1].content = analysis.substring(lastIndex, match.index).trim();
       }
-      const content = lines.slice(1).join('\n').trim();
-      return { title: title.toUpperCase(), inlineData, content };
-    });
+      sections.push({ title: match[1].trim().toUpperCase(), content: "" });
+      lastIndex = headerRegex.lastIndex;
+    }
+    
+    if (sections.length > 0) {
+      sections[sections.length - 1].content = analysis.substring(lastIndex).trim();
+    } else {
+      // Fallback if no ### headers found: treat whole text as one section
+      sections.push({ title: "BIOLOGICAL REALITY", content: analysis });
+    }
+
+    return sections;
+  }, [analysis]);
+
+  const feedbackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [analysis]);
 
   return (
-    <div className="animate-in fade-in zoom-in-95 duration-500 my-8">
-      <Card variant="dark" className="border-none ring-1 ring-slate-800 dark:ring-slate-700">
-        <div className="flex justify-between items-start mb-8 pb-4 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 className="text-xl font-black tracking-tight text-white italic">Unlocking Your Biological Potential</h3>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-0.5">Metabolic Insight Synthesis</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors no-print">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="space-y-10">
-          {parsedSections.map((section, idx) => {
-            if (section.title.includes('VERDICT')) {
-              return (
-                <div key={idx} className="bg-gradient-primary p-8 rounded-[20px] border border-white/10 relative overflow-hidden group shadow-2xl">
-                  <h4 className="text-[10px] font-black text-sky-300 uppercase tracking-[0.3em] mb-2">Metabolic Status</h4>
-                  <p className="text-3xl font-black leading-tight tracking-tighter text-white">{section.inlineData || 'CALCULATING...'}</p>
-                  {section.content && <p className="text-slate-400 text-sm font-bold mt-4 leading-relaxed border-t border-white/5 pt-4 italic">{section.content}</p>}
-                </div>
-              );
-            }
-            if (section.title.includes('VITAL SCORE')) {
-              const data = section.inlineData || section.content;
-              const parts = data.split(' - ');
-              const scorePart = parts[0] || "0/10";
-              const labelPart = parts[1] || "EVALUATING";
-              return (
-                <div key={idx} className="flex items-center gap-8 py-4 px-2">
-                  <div className="h-24 w-24 flex-shrink-0 rounded-[20px] bg-gradient-sky border border-white/20 flex flex-col items-center justify-center shadow-xl rotate-3">
-                    <span className="text-4xl font-black text-slate-900 leading-none">{scorePart.split('/')[0]}</span>
-                    <span className="text-[11px] font-black text-slate-900/40 uppercase tracking-widest mt-1">/ 10</span>
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1">Health Performance</h4>
-                    <p className="text-3xl font-black text-white uppercase italic tracking-tighter">{labelPart}</p>
-                  </div>
-                </div>
-              );
-            }
-            if (section.title.includes('FORECAST')) {
-               return (
-                <div key={idx} className="bg-sky-500/5 p-8 rounded-[20px] border border-sky-500/10 relative overflow-hidden group">
-                  <h4 className="text-[10px] font-black text-sky-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span> Biological Trajectory
-                  </h4>
-                  <p className="text-lg font-bold text-slate-200 leading-relaxed italic">
-                    "{section.inlineData}"
-                  </p>
-                  <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
-                    {section.content}
-                  </p>
-                </div>
-               );
-            }
-            return (
-              <div key={idx} className="space-y-4">
-                <h4 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(56,189,248,0.3)]"></span> {section.title}
-                </h4>
-                <div className="text-slate-300 text-sm md:text-base leading-relaxed font-medium pl-1">
-                  {section.inlineData && !section.content.includes(section.inlineData) && <p className="mb-4 font-bold text-white text-xl">{section.inlineData}</p>}
-                  {section.content.split('\n').map((line, lIdx) => (
-                    <div key={lIdx} className={line.startsWith('-') ? "flex gap-3 mb-3 bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors" : "mb-4"}>
-                      {line.startsWith('-') ? (
-                        <>
-                          <span className="text-sky-400 font-black pt-0.5">→</span>
-                          <span className="font-bold text-slate-200">{line.replace('- ', '').trim()}</span>
-                        </>
-                      ) : <p>{line.trim()}</p>}
-                    </div>
-                  ))}
-                </div>
+    <div ref={feedbackRef} className="animate-in fade-in zoom-in-95 duration-700 my-8 scroll-mt-24">
+      <Card variant="dark" className="border-none ring-1 ring-slate-800 dark:ring-slate-700 p-0 overflow-visible shadow-2xl">
+        <div className="p-6 md:p-10 space-y-12">
+          {/* Header */}
+          <div className="flex justify-between items-start border-b border-white/5 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-sky-500 animate-pulse shadow-[0_0_15px_rgba(56,189,248,0.7)]"></div>
+              <div>
+                <h3 className="text-[10px] font-black tracking-[0.4em] text-slate-500 uppercase">Metabolic Oracle v3.0</h3>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 italic">Real-Time Biological Forecasting</p>
               </div>
-            );
-          })}
-          
-          <div className="pt-10 border-t border-white/5 opacity-40 hover:opacity-100 transition-opacity">
-            <p className="text-[9px] font-bold text-slate-400 italic text-center leading-relaxed px-4 max-w-sm mx-auto">
-              AaharWise is a wellness and nutrition education tool, not medical advice or a medical device. 
-              For diagnosis or treatment, please consult a doctor.
+            </div>
+            <button onClick={onClose} className="text-slate-600 hover:text-white transition-colors no-print p-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Dynamic Content Rendering */}
+          <div className="space-y-12 h-auto">
+            {parsedSections.map((section, idx) => {
+              const isVerdict = section.title.includes('VERDICT');
+              const isToll = section.title.includes('TOLL');
+              const isForecast = section.title.includes('FORECAST') || section.title.includes('CONSEQUENCE');
+              const isFix = section.title.includes('FIX');
+
+              if (isVerdict) {
+                return (
+                  <div key={idx} className="space-y-4">
+                    <p className="text-[10px] font-black text-sky-400 uppercase tracking-[0.3em] mb-1">Impact Level</p>
+                    <p className="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-none uppercase">
+                      {section.content.split('\n')[0].replace(/^\[|\]$/g, '')}
+                    </p>
+                    <p className="text-slate-300 text-lg font-bold leading-relaxed max-w-2xl">
+                      {section.content.split('\n').slice(1).join(' ')}
+                    </p>
+                  </div>
+                );
+              }
+
+              if (isToll) {
+                return (
+                  <div key={idx} className="space-y-3">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Immediate Metabolic Toll</h4>
+                    <p className="text-slate-400 text-base font-medium leading-relaxed italic border-l-2 border-slate-800 pl-6 py-1">
+                      {section.content}
+                    </p>
+                  </div>
+                );
+              }
+
+              if (isForecast) {
+                return (
+                  <div key={idx} className="bg-gradient-to-br from-slate-900 to-slate-950 p-8 rounded-3xl border border-white/5 shadow-2xl relative group h-auto">
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                      <Icons.History />
+                    </div>
+                    <h4 className="text-[9px] font-black text-rose-500 uppercase tracking-[0.4em] mb-4">10-Year Physiological Reality</h4>
+                    <p className="text-slate-100 text-xl font-black tracking-tight leading-snug">
+                      "{section.content}"
+                    </p>
+                    <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Projection based on chronic compounding of today's intake</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isFix) {
+                return (
+                  <div key={idx} className="flex items-center gap-6 bg-sky-500/5 p-6 rounded-2xl border border-sky-500/10 hover:border-sky-500/20 transition-all">
+                    <div className="w-14 h-14 rounded-2xl bg-sky-500/20 flex items-center justify-center text-3xl shadow-inner border border-sky-500/20 text-sky-400">⚡</div>
+                    <div>
+                      <h4 className="text-[9px] font-black text-sky-400 uppercase tracking-[0.3em] mb-1">Vital Metabolic Shift</h4>
+                      <p className="text-slate-100 text-xl font-black tracking-tight">{section.content}</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Fallback for unexpected sections
+              return (
+                <div key={idx} className="space-y-2 border-t border-white/5 pt-6">
+                  <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{section.title}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{section.content}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Static Disclaimer at the very end of summary */}
+          <div className="pt-10 border-t border-white/5 text-center">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-relaxed max-w-lg mx-auto italic">
+              “AaharWise is a wellness and nutrition education tool, not medical advice or a medical device. For diagnosis or treatment, please consult a doctor.”
             </p>
           </div>
         </div>
@@ -331,7 +458,7 @@ export default function App() {
         const filtered = prev.filter(log => log.date !== todayStr);
         return [updatedLog, ...filtered].slice(0, 30);
       });
-    } catch (err) { setAnalysis("Analysis hit a snag. Please try again!"); } finally { setIsAnalyzing(false); }
+    } catch (err) { setAnalysis("Analysis snag. Please retry."); } finally { setIsAnalyzing(false); }
   };
 
   const exportDailyCSV = () => {
@@ -353,7 +480,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tighter leading-none">{APP_NAME}</h1>
-              <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.1em] mt-1 italic">Wellness begins with what you eat</p>
+              <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.1em] mt-1 italic">Personal Wellness Forecaster</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -413,11 +540,15 @@ export default function App() {
             <Card variant="sage" className="dark:bg-slate-800/80">
               <div className="flex justify-between items-start"><SectionTitle title="Weekly Trends" icon={<Icons.History />} color="text-slate-800 dark:text-slate-100" /><button onClick={exportDailyCSV} className="flex items-center gap-2 px-4 py-2 bg-white/40 dark:bg-slate-700/40 hover:bg-white/60 dark:hover:bg-slate-700/60 rounded-xl text-[10px] font-black no-print transition-all border border-black/5 uppercase tracking-widest">Download Data</button></div>
               {weeklyAverages ? (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                  {Object.entries({ Cal: weeklyAverages.cal, Pro: weeklyAverages.pro, Car: weeklyAverages.car, Fat: weeklyAverages.fat, Fib: weeklyAverages.fib }).map(([k, v]) => (
-                    <div key={k} className="p-4 bg-white/40 dark:bg-slate-900/40 rounded-xl backdrop-blur-sm border border-white/20 dark:border-slate-700/40"><p className="text-[9px] font-black opacity-60 uppercase tracking-widest mb-1">{k}</p><p className="text-xl font-black">{Math.round(v as number)}{k === 'Cal' ? '' : 'g'}</p></div>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+                    {Object.entries({ Cal: weeklyAverages.cal, Pro: weeklyAverages.pro, Car: weeklyAverages.car, Fat: weeklyAverages.fat, Fib: weeklyAverages.fib }).map(([k, v]) => (
+                      <div key={k} className="p-4 bg-white/40 dark:bg-slate-900/40 rounded-xl backdrop-blur-sm border border-white/20 dark:border-slate-700/40"><p className="text-[9px] font-black opacity-60 uppercase tracking-widest mb-1">{k}</p><p className="text-xl font-black">{Math.round(v as number)}{k === 'Cal' ? '' : 'g'}</p></div>
+                    ))}
+                  </div>
+                  <HistoricalTrendChart data={pastLogs} />
+                  <WaterHistoricalChart data={pastLogs} />
+                </>
               ) : <p className="text-center py-12 text-slate-500 font-bold italic opacity-40">No historical data recorded.</p>}
             </Card>
             <div className="space-y-4">
@@ -568,13 +699,12 @@ export default function App() {
                     {meals.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-12">
                         <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center opacity-30 text-2xl">⚡</div>
-                        <div className="text-slate-300 dark:text-slate-600 font-bold italic text-xs px-8">Your biological timeline is empty. Record your first meal to start tracking metabolic impact.</div>
+                        <div className="text-slate-300 dark:text-slate-600 font-bold italic text-xs px-8">Biological timeline empty. Scan or log a meal to begin tracking impact.</div>
                       </div>
                     ) : (
                       <div className="space-y-8 relative ml-4 border-l-2 border-slate-100 dark:border-slate-800 pl-8 pb-8 pt-2">
                         {meals.map((meal, idx) => (
                           <div key={meal.id} className="relative group animate-in fade-in slide-in-from-left-4 duration-300">
-                            {/* Dot indicator aligned with vertical line */}
                             <div className="absolute -left-[41px] top-2 w-4 h-4 rounded-full border-4 border-slate-50 dark:border-slate-900 bg-slate-800 dark:bg-slate-200 z-10 shadow-sm" />
                             
                             <div className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group-hover:translate-x-1">
@@ -601,7 +731,6 @@ export default function App() {
                             </div>
                           </div>
                         ))}
-                        {/* Final Dot Indicator */}
                         <div className="absolute -left-[37px] bottom-0 w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
                       </div>
                     )}
@@ -617,9 +746,9 @@ export default function App() {
                 className={`px-8 py-3.5 rounded-full font-black text-[10px] shadow-2xl flex items-center justify-center gap-2.5 transition-all transform active:scale-95 group uppercase tracking-[0.2em] ${meals.length === 0 || isAnalyzing ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 dark:hover:bg-slate-600 shadow-slate-200/50 dark:shadow-slate-900/50'}`}
               >
                 {isAnalyzing ? (
-                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> Synthesizing Profile</>
+                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> Synthesizing Fate</>
                 ) : (
-                  <><div className="w-4 h-4"><Icons.NeuralLogo /></div><span>Unlocking Potential</span></>
+                  <><div className="w-4 h-4"><Icons.NeuralLogo /></div><span>Predict Metabolic Future</span></>
                 )}
               </button>
             </div>
